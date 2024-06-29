@@ -1,8 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:carousel_slider/carousel_slider.dart';
-import 'package:flutter_html/flutter_html.dart';
 
-class AboutUs extends StatelessWidget {
+class AboutUs extends StatefulWidget {
+  @override
+  _AboutUsState createState() => _AboutUsState();
+}
+
+class _AboutUsState extends State<AboutUs> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,29 +42,42 @@ class AboutUs extends StatelessWidget {
             SizedBox(
               height: 20,
             ),
-            CarouselSlider(
-              options: CarouselOptions(height: 400.0),
-              items: [
-                body(context),
-                gavin(context),
-                tyler(context),
-                jaideep(context),
-                waheed(context)
-              ].map((i) {
-                return Builder(
-                  builder: (BuildContext context) {
-                    return Container(
-                      width: MediaQuery.of(context).size.width,
-                      margin: EdgeInsets.symmetric(horizontal: 5.0),
-                      decoration: BoxDecoration(
-                        color: Color.fromARGB(255, 151, 151, 151),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: i,
-                    );
-                  },
+            Container(
+              height: 400.0,
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentPage = index;
+                  });
+                },
+                children: [
+                  body(context),
+                  gavin(context),
+                  tyler(context),
+                  jaideep(context),
+                  waheed(context)
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 20,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (index) {
+                return Container(
+                  margin: EdgeInsets.symmetric(horizontal: 4),
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _currentPage == index
+                        ? Color.fromARGB(255, 244, 4, 4)
+                        : Colors.grey,
+                  ),
                 );
-              }).toList(),
+              }),
             ),
             SizedBox(
               height: 20,
@@ -187,7 +212,6 @@ class AboutUs extends StatelessWidget {
     ));
   }
 }
-
 
 //-------------------------------------------
 // Center body() {

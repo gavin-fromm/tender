@@ -1,12 +1,10 @@
 import 'dart:async';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_thought/user-interface/user-functions/login_page.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 import '../../back-end/authentification.dart';
-
-//UI screen for updating user emails
 
 class ChangePasswordPage extends StatefulWidget {
   @override
@@ -17,6 +15,8 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
   static const creationSuccessful = SnackBar(
     content: Text('Password Updated! Redirecting.....'),
   );
+
+  String? get _userEmail => Supabase.instance.client.auth.currentUser?.email;
 
   showAlertDialog(BuildContext context) {
     Widget cancelButton = TextButton(
@@ -39,18 +39,24 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
       ),
       onPressed: () async {
         updateInfoButton.success();
-        await user.updatePassword(newPasswordController.text.trim());
+        await Supabase.instance.client.auth
+            .updateUser(UserAttributes(password: newPasswordController.text.trim()));
+        await signOut();
         // ignore: use_build_context_synchronously
-        Navigator.push(context, MaterialPageRoute(builder: (_) => LoginPage()));
-        signOut();
-        ScaffoldMessenger.of(context).showSnackBar(creationSuccessful);
+        if (context.mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => LoginPage()),
+            (route) => false,
+          );
+          ScaffoldMessenger.of(context).showSnackBar(creationSuccessful);
+        }
       },
-    ); // set up the AlertDialog
+    );
     AlertDialog alert = AlertDialog(
       title: Text("Confirm"),
       content: Text("You will be logged out after performing this action."),
       actions: [cancelButton, confirmButton],
-    ); // show the dialog
+    );
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -64,8 +70,6 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
   TextEditingController confirmNewPasswordController = TextEditingController();
   final RoundedLoadingButtonController updateInfoButton =
       RoundedLoadingButtonController();
-  final user = FirebaseAuth.instance.currentUser!;
-  final userEmail = FirebaseAuth.instance.currentUser?.email;
 
   final incorrectPasswordMessage = MaterialBanner(
     backgroundColor: Colors.transparent,
@@ -75,9 +79,7 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
       color: Colors.red,
       title: 'Incorrect Password',
       message: 'Password entered does not match current user',
-
       contentType: ContentType.failure,
-      // to configure for material banner
     ),
     actions: const [SizedBox.shrink()],
   );
@@ -90,9 +92,7 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
       color: Colors.red,
       title: 'Passwords do not match',
       message: 'Please confirm your new password',
-
       contentType: ContentType.failure,
-      // to configure for material banner
     ),
     actions: const [SizedBox.shrink()],
   );
@@ -105,9 +105,7 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
       color: Colors.red,
       title: 'Empty Input',
       message: 'Please fill in all inputs',
-
       contentType: ContentType.failure,
-      // to configure for material banner
     ),
     actions: const [SizedBox.shrink()],
   );
@@ -140,25 +138,17 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
     return SingleChildScrollView(
       child: Center(
         child: Column(children: [
-          SizedBox(
-            height: 100,
-          ),
+          SizedBox(height: 100),
           SizedBox(
               width: 200,
               height: 90,
-              child: Icon(
-                Icons.lock_clock,
-                size: 70,
-              ) //to display the image
-              ),
+              child: Icon(Icons.lock_clock, size: 70)),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               controller: oldPasswordController,
-              //Text Field for username/email
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                icon: Icon(Icons.lock),
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.lock_outline_rounded),
                 labelText: 'Current Password',
               ),
             ),
@@ -167,10 +157,8 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               controller: newPasswordController,
-              //Text Field for username/email
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                icon: Icon(Icons.password_sharp),
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.lock_open_outlined),
                 labelText: 'New Password',
               ),
             ),
@@ -180,12 +168,9 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
             child: TextField(
               obscureText: true,
               controller: confirmNewPasswordController,
-              //Text Field for username/email
-              decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  icon: Icon(Icons.password_sharp),
-                  labelText: 'Confirm Password',
-                  hintText: ''),
+              decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.lock_outline_rounded),
+                  labelText: 'Confirm Password'),
             ),
           ),
           Padding(
@@ -204,7 +189,6 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
                     confirmNewPasswordController.text.isEmpty) {
                   updateInfoButton.error();
                   Timer(Duration(seconds: 1), () => updateInfoButton.reset());
-                  // ignore: use_build_context_synchronously
                   ScaffoldMessenger.of(context)
                     ..hideCurrentMaterialBanner()
                     ..showMaterialBanner(emptyInputMessage);
@@ -216,7 +200,6 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
                     confirmNewPasswordController.text) {
                   updateInfoButton.error();
                   Timer(Duration(seconds: 2), () => updateInfoButton.reset());
-                  // ignore: use_build_context_synchronously
                   ScaffoldMessenger.of(context)
                     ..hideCurrentMaterialBanner()
                     ..showMaterialBanner(matchingPasswordMessage);
@@ -226,14 +209,13 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
                           .hideCurrentMaterialBanner());
                 } else {
                   User? user = await signInWithEmailPassword(
-                      userEmail.toString(),
+                      _userEmail.toString(),
                       oldPasswordController.text.toString());
                   if (user != null) {
                     showAlertDialog(context);
                   } else {
                     updateInfoButton.error();
                     Timer(Duration(seconds: 2), () => updateInfoButton.reset());
-                    // ignore: use_build_context_synchronously
                     ScaffoldMessenger.of(context)
                       ..hideCurrentMaterialBanner()
                       ..showMaterialBanner(incorrectPasswordMessage);

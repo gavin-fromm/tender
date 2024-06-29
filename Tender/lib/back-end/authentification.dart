@@ -1,133 +1,140 @@
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
+import 'dart:io';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-final FirebaseAuth _auth = FirebaseAuth.instance;
-
-String? uid;
-String? userEmail;
-
-//registers user to firebase auth
+final _supabase = Supabase.instance.client;
 
 Future<User?> registerWithEmailPassword(String firstName, String lastName,
     String userName, String email, String password) async {
-  // Initialize Firebase
-  await Firebase.initializeApp();
-  User? user;
-  // try to create user with user inputs
+  final response = await _supabase.auth.signUp(
+    email: email,
+    password: password,
+  );
+
+  final user = response.user;
+
+  // Supabase returns a fake user with empty identities when the email is
+  // already registered but unconfirmed (email enumeration protection)
+  if (user == null || (user.identities?.isEmpty ?? false)) {
+    throw const AuthException(
+        'This email is already registered. Check your inbox for a confirmation link, or try logging in.');
+  }
 
   try {
-    UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-
-    user = userCredential.user;
-
-    if (user != null) {
-      uid = user.uid;
-      userEmail = user.email;
-      await user.updateDisplayName(userName);
-//creates user document in the Firestore database
-      addUserDetails(firstName, lastName, userName, email);
-
-      print('Successfully Registered');
-    }
-  } on FirebaseAuthException catch (e) {
-    if (e.code == 'weak-password') {
-      print('The password provided is too weak.');
-    } else if (e.code == 'email-already-in-use') {
-      print('An account already exists for that email.');
-    }
+    await _supabase.from('profiles').insert({
+      'id': user.id,
+      'first_name': firstName,
+      'last_name': lastName,
+      'user_name': userName.isNotEmpty
+          ? userName
+          : '${email.split('@')[0]}_${user.id.substring(0, 6)}',
+      'email': email,
+    });
   } catch (e) {
-    print(e);
+    print('Profile insert error (non-fatal): $e');
   }
   return user;
 }
 
-Future addUserDetails(
-    String firstName, String lastName, String userName, String email) async {
-  await FirebaseFirestore.instance.collection('users').doc(uid).set({
-    'first name': firstName,
-    'last name': lastName,
-    'user name': userName,
-    'email': email,
-    'uid': uid
+Future<User?> signInWithGoogle() async {
+  const port = 8080;
+  const redirectUrl = 'http://localhost:$port';
+
+  final server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
+
+  await _supabase.auth.signInWithOAuth(
+    OAuthProvider.google,
+    redirectTo: redirectUrl,
+  );
+
+  final completer = Completer<User?>();
+
+  late StreamSubscription<HttpRequest> sub;
+  sub = server.listen((request) async {
+    request.response
+      ..statusCode = 200
+      ..headers.contentType = ContentType.html
+      ..write(
+          '<html><head><title>Recipeal</title></head><body>'
+          '<p>Sign-in complete! You can close this tab.</p>'
+          '<script>window.close();</script></body></html>');
+    await request.response.close();
+    await sub.cancel();
+    await server.close();
+
+    final code = request.uri.queryParameters['code'];
+    if (code == null) {
+      completer.complete(null);
+      return;
+    }
+
+    try {
+      final response = await _supabase.auth.exchangeCodeForSession(code);
+      final user = response.session.user;
+
+      final existing = await _supabase
+          .from('profiles')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (existing == null) {
+        final meta = user.userMetadata ?? {};
+        try {
+          await _supabase.from('profiles').insert({
+            'id': user.id,
+            'first_name': meta['given_name'] ?? '',
+            'last_name': meta['family_name'] ?? '',
+            'user_name': (user.email ?? '').split('@')[0],
+            'email': user.email ?? '',
+          });
+        } catch (_) {
+          // Profile insert failed (e.g. username conflict) — non-fatal
+        }
+      }
+
+      completer.complete(user);
+    } catch (e) {
+      completer.complete(null);
+    }
   });
-}
 
-//method for updating a user's email
-
-Future updateUserEmail(String email, String uid) async {
-  await FirebaseFirestore.instance.collection('users').doc(uid).update({
-    'email': email,
-  });
-}
-
-//method for updating a user's username
-
-Future updateUsername(String uname, String uid) async {
-  await FirebaseFirestore.instance.collection('users').doc(uid).update({
-    'user name': uname,
-  });
-}
-
-//method for updating a user's name
-
-Future updateName(String fName, String lName, String uid) async {
-  await FirebaseFirestore.instance.collection('users').doc(uid).update({
-    'first name': fName,
-    'last name': lName,
-  });
+  return completer.future.timeout(
+    const Duration(minutes: 5),
+    onTimeout: () async {
+      await server.close();
+      return null;
+    },
+  );
 }
 
 Future<User?> signInWithEmailPassword(String email, String password) async {
-  //method for handling log in functionality
-  await Firebase.initializeApp();
-  User? user;
-
-  try {
-    UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-    user = userCredential.user;
-
-    if (user != null) {
-      uid = user.uid;
-      userEmail = user.email;
-
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('auth', true);
-
-      print('Successful Login');
-    }
-  } on FirebaseAuthException catch (e) {
-    if (e.code == 'user-not-found') {
-      print('No user found for that email.');
-    } else if (e.code == 'wrong-password') {
-      print('Wrong password provided.');
-    }
-  }
-  return user;
+  final response = await _supabase.auth.signInWithPassword(
+    email: email,
+    password: password,
+  );
+  return response.user;
 }
 
-//method to handle sign out functionality
-
-Future<String> signOut() async {
-  await _auth.signOut();
-
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  prefs.setBool('auth', false);
-
-  uid = null;
-  userEmail = null;
-
-  return 'User signed out';
+Future<void> signOut() async {
+  await _supabase.auth.signOut();
 }
 
-Future<void> deleteUser(User user, String uid) async {
-  await user.delete();
-  await FirebaseFirestore.instance.collection('users').doc(uid).delete();
+Future<void> deleteUser(String uid) async {
+  await _supabase.rpc('delete_user');
+}
+
+Future<void> updateUserEmail(String email, String uid) async {
+  await _supabase.from('profiles').update({'email': email}).eq('id', uid);
+}
+
+Future<void> updateUsername(String uname, String uid) async {
+  await _supabase.from('profiles').update({'user_name': uname}).eq('id', uid);
+}
+
+Future<void> updateName(String fName, String lName, String uid) async {
+  await _supabase.from('profiles').update({
+    'first_name': fName,
+    'last_name': lName,
+  }).eq('id', uid);
 }

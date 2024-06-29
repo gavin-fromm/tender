@@ -1,12 +1,10 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:food_for_thought/back-end/database.dart';
 import 'package:food_for_thought/classes/recipe_class.dart';
 import 'package:food_for_thought/user-interface/cards/recipe_card.dart';
 import 'package:loading_indicator/loading_indicator.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RecommendationPage extends StatefulWidget {
   @override
@@ -20,7 +18,7 @@ class RecommendationPageState extends State<RecommendationPage> {
 
   int index = 0;
   bool _isLoading = true;
-  String uid = FirebaseAuth.instance.currentUser!.uid;
+  String uid = Supabase.instance.client.auth.currentUser!.id;
   int vegetarian = 0;
   int vegan = 0;
   int glutenFree = 0;
@@ -215,37 +213,11 @@ class RecommendationPageState extends State<RecommendationPage> {
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold),
                           ),
-                          onPressed: () {
+                          onPressed: () async {
                             print(recommendedRecipes[index].name);
                             Navigator.pop(context);
-                            Map<String, dynamic> savedRecipe = {
-                              'id': recommendedRecipes[index].id,
-                              'title': recommendedRecipes[index].name,
-                              'servings': recommendedRecipes[index].servings,
-                              'ingredients':
-                                  recommendedRecipes[index].ingredients,
-                              'preparationSteps':
-                                  recommendedRecipes[index].preparationSteps,
-                              'cookTime': recommendedRecipes[index].totalTime,
-                              'thumbnailUrl': recommendedRecipes[index].images,
-                              'isVegetarian':
-                                  recommendedRecipes[index].isVegetarian,
-                              'isVegan': recommendedRecipes[index].isVegan,
-                              'isGlutenFree':
-                                  recommendedRecipes[index].isGlutenFree,
-                              'isDairyFree':
-                                  recommendedRecipes[index].isDairyFree,
-                              'isVeryHealthy':
-                                  recommendedRecipes[index].isVeryHealthy,
-                              'isPopular': recommendedRecipes[index].isPopular
-                            };
-                            FirebaseFirestore.instance
-                                .collection("users")
-                                .doc(uid)
-                                .collection('saved recipes')
-                                .doc(recommendedRecipes[index].name)
-                                .set(savedRecipe);
-
+                            await DatabaseService.saveRecipe(
+                                uid, recommendedRecipes[index]);
                             getRecipes();
                             setState(() {});
                           },

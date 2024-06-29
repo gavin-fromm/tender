@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_thought/user-interface/nav-bar/create_recipe_from_url_page.dart';
 import 'package:food_for_thought/user-interface/nav-bar/feed_page.dart';
@@ -7,16 +6,15 @@ import 'package:food_for_thought/user-interface/nav-bar/recommendations_page.dar
 import 'package:food_for_thought/user-interface/nav-bar/create_recipe_page.dart';
 import 'package:food_for_thought/user-interface/nav-bar/verified_created_recipes_page.dart';
 
+const _red = Color(0xFFE8120C);
+
 class HomePage extends StatefulWidget {
   @override
   HomePageState createState() => HomePageState();
 }
 
 class HomePageState extends State<HomePage> {
-  final user = FirebaseAuth.instance.currentUser;
   int selectedIndex = 2;
-  static const TextStyle optionStyle =
-      TextStyle(fontSize: 30, fontWeight: FontWeight.bold);
 
   final screens = [
     CreateRecipeFromURLPage(),
@@ -25,10 +23,6 @@ class HomePageState extends State<HomePage> {
     RecommendationPage(),
     CommunityFeedPage(),
   ];
-
-  static const logOutMessage = SnackBar(
-    content: Text('User Logged out'),
-  );
 
   void _onItemTapped(int index) {
     setState(() {
@@ -40,74 +34,102 @@ class HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: NavDrawer(),
-      appBar: appBar(),
-      body: body(),
-      bottomNavigationBar: bottomNavigationBar(),
+      appBar: _buildAppBar(),
+      body: screens[selectedIndex],
+      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
-  BottomNavigationBar bottomNavigationBar() {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: Color.fromARGB(255, 151, 151, 151),
-      selectedItemColor: Colors.white,
-      unselectedItemColor: Colors.white70,
-      selectedIconTheme: IconThemeData(size: 30),
-      showUnselectedLabels: false,
-      showSelectedLabels: false,
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.link),
-          label: 'NA',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.create),
-          label: 'Create',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.feed),
-          label: 'Feed',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.recommend),
-          label: 'Recommendations',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.verified_rounded),
-          label: 'Community Recipes ',
-        ),
-      ],
-      currentIndex: selectedIndex,
-      onTap: _onItemTapped,
-    );
-  }
-
-  Center body() {
-    return Center(
-      child: screens[selectedIndex],
-    );
-  }
-
-  AppBar appBar() {
+  AppBar _buildAppBar() {
     return AppBar(
-      toolbarHeight: 45,
-      backgroundColor: Color.fromARGB(255, 244, 4, 4),
+      toolbarHeight: 54,
+      backgroundColor: _red,
       centerTitle: true,
+      elevation: 0,
       title: const Text(
-        'Recipeal',
-        style: TextStyle(fontWeight: FontWeight.bold),
+        'RECIPEAL',
+        style: TextStyle(
+          fontFamily: 'Oswald',
+          fontWeight: FontWeight.w700,
+          fontSize: 22,
+          letterSpacing: 4,
+          color: Colors.white,
+        ),
       ),
       actions: [
-        SizedBox(
-          width: 30,
-          height: 30,
-          child: Image.asset('assets/logo/lovefood.png' //to display the image
-              ),
+        Padding(
+          padding: const EdgeInsets.only(right: 14),
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: Image.asset('assets/logo/lovefood.png'),
+          ),
         ),
-        SizedBox(
-          width: 15,
-        )
       ],
+    );
+  }
+
+  Widget _buildBottomNav() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.10),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        selectedItemColor: _red,
+        unselectedItemColor: const Color(0xFFB8B0B0),
+        selectedLabelStyle: const TextStyle(
+          fontFamily: 'Oswald',
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontFamily: 'Oswald',
+          fontSize: 10,
+          fontWeight: FontWeight.w400,
+        ),
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
+        elevation: 0,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add_link_rounded),
+            activeIcon: Icon(Icons.add_link_rounded, size: 28),
+            label: 'Import',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.edit_note_rounded),
+            activeIcon: Icon(Icons.edit_note_rounded, size: 28),
+            label: 'Create',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.local_fire_department_outlined),
+            activeIcon: Icon(Icons.local_fire_department_rounded, size: 28),
+            label: 'Feed',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.auto_awesome_outlined),
+            activeIcon: Icon(Icons.auto_awesome_rounded, size: 28),
+            label: 'For You',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.verified_outlined),
+            activeIcon: Icon(Icons.verified_rounded, size: 28),
+            label: 'Community',
+          ),
+        ],
+        currentIndex: selectedIndex,
+        onTap: _onItemTapped,
+      ),
     );
   }
 }

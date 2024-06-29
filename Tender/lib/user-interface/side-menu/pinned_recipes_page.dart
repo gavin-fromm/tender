@@ -1,8 +1,7 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_search_bar/easy_search_bar.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:food_for_thought/classes/recipe_class.dart';
 import 'package:food_for_thought/user-interface/cards/recipe_card.dart';
 import 'package:loading_indicator/loading_indicator.dart';
@@ -69,7 +68,7 @@ class ViewPinnedRecipesPageState extends State<ViewPinnedRecipesPage> {
   }
 
   late List<Recipe> recipes = [];
-  String uid = FirebaseAuth.instance.currentUser!.uid;
+  String uid = Supabase.instance.client.auth.currentUser!.id;
   String searchValue = '';
 
   Future<void> searchByTitle(String query) async {
@@ -222,14 +221,10 @@ class ViewPinnedRecipesPageState extends State<ViewPinnedRecipesPage> {
                           style: TextStyle(
                               color: Colors.white, fontWeight: FontWeight.bold),
                         ),
-                        onPressed: () {
+                        onPressed: () async {
                           Navigator.pop(context);
-                          final docs = FirebaseFirestore.instance
-                              .collection("users")
-                              .doc(uid)
-                              .collection('pinned recipes')
-                              .doc(recipes[index].name)
-                              .delete();
+                          await DatabaseService.unpinRecipe(
+                              uid, recipes[index].id);
                           getRecipes();
                           setState(() {});
                         },

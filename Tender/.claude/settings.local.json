@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter run *)",
+      "Bash(flutter --version)",
+      "Bash(flutter pub *)",
+      "Bash(flutter build *)",
+      "Bash(flutter doctor *)",
+      "Bash(xcrun simctl *)",
+      "Bash(sdkmanager --list)",
+      "Bash(gem list *)",
+      "Bash(pod --version)",
+      "Bash(yes)",
+      "Bash(/Users/gavin/Library/Android/sdk/cmdline-tools/latest/bin/sdkmanager \"build-tools;28.0.3\")",
+      "Bash(brew list *)",
+      "Bash(sudo gem *)",
+      "Bash(gem install *)",
+      "Bash(ruby --version)",
+      "Bash(gem env *)",
+      "Skill(update-config)"
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:food_for_thought/user-interface/user-functions/login_page.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 import '../../back-end/authentification.dart';
@@ -19,8 +19,8 @@ class ChangeNamePageState extends State<ChangeNamePage> {
   TextEditingController confirmPasswordController = TextEditingController();
   final RoundedLoadingButtonController updateInfoButton =
       RoundedLoadingButtonController();
-  final user = FirebaseAuth.instance.currentUser!;
-  final userEmail = FirebaseAuth.instance.currentUser?.email;
+  final _supabaseUser = Supabase.instance.client.auth.currentUser!;
+  String get _userEmail => Supabase.instance.client.auth.currentUser?.email ?? '';
 
   static const creationSuccessful = SnackBar(
     content: Text('Name Updated! Redirecting.....'),
@@ -47,12 +47,17 @@ class ChangeNamePageState extends State<ChangeNamePage> {
       ),
       onPressed: () async {
         updateInfoButton.success();
-        updateName(firstNameController.text.trim(),
-            lastNameController.text.trim(), user.uid);
+        await updateName(firstNameController.text.trim(),
+            lastNameController.text.trim(), _supabaseUser.id);
+        await signOut();
         // ignore: use_build_context_synchronously
-        Navigator.push(context, MaterialPageRoute(builder: (_) => LoginPage()));
-        signOut();
-        ScaffoldMessenger.of(context).showSnackBar(creationSuccessful);
+        if (context.mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => LoginPage()),
+            (route) => false,
+          );
+          ScaffoldMessenger.of(context).showSnackBar(creationSuccessful);
+        }
       },
     ); // set up the AlertDialog
     AlertDialog alert = AlertDialog(
@@ -133,9 +138,8 @@ class ChangeNamePageState extends State<ChangeNamePage> {
               child: TextField(
                 controller: firstNameController,
                 //Text Field for username/email
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  icon: Icon(Icons.mail),
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.badge_outlined),
                   labelText: 'First Name',
                 ),
               ),
@@ -145,9 +149,8 @@ class ChangeNamePageState extends State<ChangeNamePage> {
               child: TextField(
                 controller: lastNameController,
                 //Text Field for username/email
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  icon: Icon(Icons.mail),
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.badge_outlined),
                   labelText: 'Last Name',
                 ),
               ),
@@ -158,11 +161,9 @@ class ChangeNamePageState extends State<ChangeNamePage> {
                 obscureText: true,
                 controller: confirmPasswordController,
                 //Text Field for username/email
-                decoration: InputDecoration(
-                    border: OutlineInputBorder(),
-                    icon: Icon(Icons.lock),
-                    labelText: 'Confirm Password',
-                    hintText: ''),
+                decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.lock_outline_rounded),
+                    labelText: 'Confirm Password'),
               ),
             ),
             Padding(
@@ -190,10 +191,10 @@ class ChangeNamePageState extends State<ChangeNamePage> {
                         () => ScaffoldMessenger.of(context)
                             .hideCurrentMaterialBanner());
                   } else {
-                    User? user = await signInWithEmailPassword(
-                        userEmail.toString(),
+                    User? signedInUser = await signInWithEmailPassword(
+                        _userEmail,
                         confirmPasswordController.text.toString());
-                    if (user != null) {
+                    if (signedInUser != null) {
                       showAlertDialog(context);
                     } else {
                       updateInfoButton.error();

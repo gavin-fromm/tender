@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_search_bar/easy_search_bar.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:food_for_thought/back-end/database.dart';
 import 'package:food_for_thought/classes/created_recipe_class.dart';
-import 'package:food_for_thought/user-interface/cards/created_recipe_card.dart';
 import 'package:loading_indicator/loading_indicator.dart';
 
 import '../../classes/public_created_recipe_class.dart';
@@ -24,7 +22,7 @@ class PublicCreatedRecipesPageState extends State<PublicCreatedRecipesPage>
     with CreatedRecipeMixin {
   List<PublicCreatedRecipe> verifiedRecipes = [];
   List<PublicCreatedRecipe> pendingRecipes = [];
-  String uid = FirebaseAuth.instance.currentUser!.uid;
+  String uid = Supabase.instance.client.auth.currentUser!.id;
   bool loaded = true;
   bool _showingMyVerifiedRecipes = true;
 
@@ -32,10 +30,9 @@ class PublicCreatedRecipesPageState extends State<PublicCreatedRecipesPage>
   void initState() {
     super.initState();
     Timer(Duration(seconds: 2),
-        () => {getVerifiedRecipes(), getPendingRecipes()});
+        () {getVerifiedRecipes(); getPendingRecipes();});
   }
 
-  // Load the created recipes from firebase
   Future<void> getVerifiedRecipes() async {
     verifiedRecipes = await DatabaseService.getMyVerifiedCreatedRecipes(uid);
     for (int i = 0; i < verifiedRecipes.length - 1; i++) {
@@ -48,7 +45,6 @@ class PublicCreatedRecipesPageState extends State<PublicCreatedRecipesPage>
     });
   }
 
-  //Load the created recipes from firebase
   Future<void> getPendingRecipes() async {
     pendingRecipes =
         await DatabaseService.getMyCreatedRecipesForVerification(uid);

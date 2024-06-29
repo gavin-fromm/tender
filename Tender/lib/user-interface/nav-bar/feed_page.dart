@@ -1,12 +1,11 @@
 import 'dart:async';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_thought/classes/recipe_class.dart';
 import 'package:food_for_thought/user-interface/cards/recipe_card.dart';
 import 'package:loading_indicator/loading_indicator.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../back-end/api_config.dart';
+import '../../back-end/database.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 
 //class to define how the recipe feed is presented to the user -- Implemented by : Gavin Fromm
@@ -25,7 +24,6 @@ class FeedPageState extends State<FeedPage> {
   late List<Recipe> recipes = [];
   late List<String> ingredients = [];
   late int lastIndex = recipes.length; //max length before refresh
-  FirebaseFirestore db = FirebaseFirestore.instance; //instance of database
   //list of tags for filtering
   List<String> tags = [
     'Random',
@@ -85,23 +83,7 @@ class FeedPageState extends State<FeedPage> {
     }
 
     for (int i = 0; i < recipes.length; i++) {
-      //to add api recipes to our local database
-      Map<String, dynamic> savedRecipe = {
-        'id': recipes[i].id,
-        'title': recipes[i].name,
-        'servings': recipes[i].servings,
-        'ingredients': recipes[i].ingredients,
-        'preparationSteps': recipes[i].preparationSteps,
-        'cookTime': recipes[i].totalTime,
-        'thumbnailUrl': recipes[i].images,
-        'isVegetarian': recipes[i].isVegetarian,
-        'isVegan': recipes[i].isVegan,
-        'isGlutenFree': recipes[i].isGlutenFree,
-        'isDairyFree': recipes[i].isDairyFree,
-        'isVeryHealthy': recipes[i].isVeryHealthy,
-        'isPopular': recipes[i].isPopular,
-      };
-      db.collection("recipes").doc(recipes[i].name).set(savedRecipe);
+      DatabaseService.upsertRecipe(recipes[i]);
     }
 
     setState(() {
@@ -419,28 +401,10 @@ class FeedPageState extends State<FeedPage> {
 // onSwipe to like recipe
   bool _onSwipe(
       int previousIndex, int? currentIndex, CardSwiperDirection direction) {
-    Map<String, dynamic> savedRecipe = {
-      'id': recipes[index].id,
-      'title': recipes[index].name,
-      'servings': recipes[index].servings,
-      'ingredients': recipes[index].ingredients,
-      'preparationSteps': recipes[index].preparationSteps,
-      'cookTime': recipes[index].totalTime,
-      'thumbnailUrl': recipes[index].images,
-      'isVegetarian': recipes[index].isVegetarian,
-      'isVegan': recipes[index].isVegan,
-      'isGlutenFree': recipes[index].isGlutenFree,
-      'isDairyFree': recipes[index].isDairyFree,
-      'isVeryHealthy': recipes[index].isVeryHealthy,
-      'isPopular': recipes[index].isPopular,
-    };
-
-    db
-        .collection("users")
-        .doc(FirebaseAuth.instance.currentUser!.uid)
-        .collection("saved recipes")
-        .doc(recipes[index].name)
-        .set(savedRecipe);
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid != null) {
+      DatabaseService.saveRecipe(uid, recipes[previousIndex]);
+    }
 
     if (currentIndex == null) {
       setState(() {

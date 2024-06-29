@@ -1,19 +1,19 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:food_for_thought/back-end/database.dart';
 import 'package:food_for_thought/classes/user_class.dart';
-import 'package:food_for_thought/user-interface/side-menu/help_page.dart';
 import 'package:food_for_thought/user-interface/side-menu/pinned_recipes_page.dart';
 import 'package:food_for_thought/user-interface/profile/profile_page.dart';
 import 'package:food_for_thought/user-interface/side-menu/created_recipes_page.dart';
 import 'package:food_for_thought/user-interface/side-menu/liked_recipes_page.dart';
-import 'package:loading_indicator/loading_indicator.dart';
-import 'about_us_page.dart';
 import '../../back-end/authentification.dart';
 import '../user-functions/login_page.dart';
 import 'public_created_recipes_page.dart';
 
-//class that defines the side bar menu of the applicaton -- Implemeted by : Gavin Fromm
+const _red = Color(0xFFE8120C);
+const _darkRed = Color(0xFF8B0000);
+const _textPrimary = Color(0xFF1C1917);
+const _bg = Color(0xFFFAF9F6);
 
 class NavDrawer extends StatefulWidget {
   static const logOutMessage = SnackBar(
@@ -25,212 +25,217 @@ class NavDrawer extends StatefulWidget {
 }
 
 class _NavDrawerState extends State<NavDrawer> {
-  final user = FirebaseAuth.instance.currentUser!;
-  String uid = FirebaseAuth.instance.currentUser!.uid.toString();
+  String uid = Supabase.instance.client.auth.currentUser!.id;
   bool loading = true;
-
   UserInformation? userInformation;
-
-  Future<void> getUser() async {
-    userInformation = await DatabaseService.getUser(uid);
-    setState(() {
-      loading = false;
-    });
-  }
 
   @override
   void initState() {
     super.initState();
-    getUser();
+    _loadUser();
   }
 
-  showAlertDialog(BuildContext context) {
-    Widget cancelButton = TextButton(
-      style: ElevatedButton.styleFrom(
-          backgroundColor: Color.fromARGB(255, 244, 4, 4)),
-      child: Text(
-        "Cancel",
-        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-      ),
-      onPressed: () {
-        Navigator.pop(context);
-      },
-    );
+  Future<void> _loadUser() async {
+    userInformation = await DatabaseService.getUser(uid);
+    setState(() => loading = false);
+  }
 
-    Widget confirmButton = TextButton(
-      style: ElevatedButton.styleFrom(
-          backgroundColor: Color.fromARGB(255, 244, 4, 4)),
-      child: Text(
-        "Logout",
-        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-      ),
-      onPressed: () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => LoginPage()));
-        signOut();
-        ScaffoldMessenger.of(context).showSnackBar(NavDrawer.logOutMessage);
-      },
-    ); // set up the AlertDialog
-    AlertDialog alert = AlertDialog(
-      title: Text("Confirm"),
-      content: Text("Are you sure you want to logout?"),
-      actions: [cancelButton, confirmButton],
-    ); // show the dialog
+  void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return alert;
-      },
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Confirm Logout',
+          style: TextStyle(fontFamily: 'Oswald', fontWeight: FontWeight.w700),
+        ),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(fontFamily: 'Oswald', fontWeight: FontWeight.w300),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await signOut();
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => LoginPage()),
+                  (route) => false,
+                );
+                ScaffoldMessenger.of(context).showSnackBar(NavDrawer.logOutMessage);
+              }
+            },
+            child: const Text('LOGOUT'),
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: sideMenu(context),
+      backgroundColor: _bg,
+      child: Column(
+        children: [
+          _buildHeader(context),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              children: [
+                _menuItem(
+                  context,
+                  Icons.person_rounded,
+                  'User Details',
+                  const Color(0xFF3B82F6),
+                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProfilePage())),
+                ),
+                _menuItem(
+                  context,
+                  Icons.favorite_rounded,
+                  'Liked Recipes',
+                  _red,
+                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => ViewSavedRecipesPage())),
+                ),
+                _menuItem(
+                  context,
+                  Icons.push_pin_rounded,
+                  'Pinned Recipes',
+                  const Color(0xFFF59E0B),
+                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => ViewPinnedRecipesPage())),
+                ),
+                _menuItem(
+                  context,
+                  Icons.edit_note_rounded,
+                  'Created Recipes',
+                  const Color(0xFF16A34A),
+                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => CreatedRecipesPage())),
+                ),
+                _menuItem(
+                  context,
+                  Icons.verified_rounded,
+                  'My Public Recipes',
+                  const Color(0xFF3B82F6),
+                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => PublicCreatedRecipesPage())),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  ListView sideMenu(BuildContext context) {
-    return ListView(
-      padding: EdgeInsets.zero,
-      children: <Widget>[
-        Container(
-          height: 110,
-          child: DrawerHeader(
-            decoration:
-                BoxDecoration(color: Color.fromARGB(255, 151, 151, 151)),
-            child: loading
-                ? Center(
-                    child: SizedBox(
-                      height: 30,
-                      width: 70,
-                      child: LoadingIndicator(
-                        indicatorType: Indicator.ballPulse,
-                        strokeWidth: 2,
-                        colors: [Color.fromARGB(255, 244, 4, 4)],
-                      ),
-                    ),
-                  )
-                : Row(
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 20,
+        bottom: 24,
+        left: 20,
+        right: 12,
+      ),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [_darkRed, _red],
+        ),
+      ),
+      child: loading
+          ? const SizedBox(
+              height: 60,
+              child: Center(
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+              ),
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.20),
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: const Icon(Icons.person_rounded, color: Colors.white, size: 28),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(
-                        width: 220,
-                        height: 100,
-                        child: RichText(
-                          text: TextSpan(
-                              text:
-                                  '${userInformation?.firstName} ${userInformation?.lastName}',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  fontSize: 20),
-                              children: <TextSpan>[
-                                TextSpan(
-                                  text: '\n@${userInformation?.userName}',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.normal),
-                                )
-                              ]),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${userInformation?.firstName ?? ''} ${userInformation?.lastName ?? ''}',
+                        style: const TextStyle(
+                          fontFamily: 'Oswald',
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                          fontSize: 18,
+                          letterSpacing: 0.3,
                         ),
                       ),
-                      IconButton(
-                        onPressed: () {
-                          showAlertDialog(context);
-                        },
-                        icon: Icon(Icons.logout),
-                        color: Colors.white,
-                        iconSize: 35,
-                      )
+                      const SizedBox(height: 2),
+                      Text(
+                        '@${userInformation?.userName ?? ''}',
+                        style: TextStyle(
+                          fontFamily: 'Oswald',
+                          color: Colors.white.withValues(alpha: 0.80),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w300,
+                        ),
+                      ),
                     ],
                   ),
-          ),
+                ),
+                IconButton(
+                  onPressed: () => _showLogoutDialog(context),
+                  icon: const Icon(Icons.logout_rounded),
+                  color: Colors.white,
+                  iconSize: 26,
+                  tooltip: 'Logout',
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _menuItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    Color iconColor,
+    VoidCallback onTap,
+  ) {
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: iconColor.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
         ),
-        ListTile(
-          leading: Icon(
-            Icons.person,
-            color: Colors.blue,
-          ),
-          title: Text('User Details'),
-          onTap: () => {
-            Navigator.push(
-                context, MaterialPageRoute(builder: (_) => ProfilePage()))
-          },
+        child: Icon(icon, color: iconColor, size: 22),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontFamily: 'Oswald',
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+          color: _textPrimary,
         ),
-        ListTile(
-          leading: Icon(
-            Icons.favorite,
-            color: Colors.red,
-          ),
-          title: Text('Liked Recipes'),
-          onTap: () => {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => ViewSavedRecipesPage()))
-          },
-        ),
-        ListTile(
-          leading: Icon(
-            Icons.push_pin,
-            color: Colors.orange,
-          ),
-          title: Text('Pinned Recipes'),
-          onTap: () => {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => ViewPinnedRecipesPage()))
-          },
-        ),
-        ListTile(
-          leading: Icon(
-            Icons.create,
-            color: Colors.green,
-          ),
-          title: Text('Created Recipes'),
-          onTap: () => {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => CreatedRecipesPage()))
-          },
-        ),
-        ListTile(
-          leading: Icon(
-            Icons.verified,
-            color: Colors.blue,
-          ),
-          title: Text('My Public Recipes'),
-          onTap: () => {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => PublicCreatedRecipesPage()))
-          },
-        ),
-        ListTile(
-          leading: Icon(
-            Icons.help,
-            color: Colors.blueGrey,
-          ),
-          title: Text('Help'),
-          onTap: () => {
-            Navigator.push(
-                context, MaterialPageRoute(builder: (_) => HelpPage()))
-          },
-        ),
-        ListTile(
-          leading: Icon(
-            Icons.people,
-            color: Colors.purple,
-          ),
-          title: Text('About Us'),
-          onTap: () => {
-            Navigator.push(
-                context, MaterialPageRoute(builder: (_) => AboutUs()))
-          },
-        ),
-        SizedBox(
-          height: 120,
-        ),
-        // ListTile(
-        //   leading: Icon(Icons.exit_to_app),
-        //   title: Text('Logout'),
-        //   onTap: () => {showAlertDialog(context)},
-        // ),
-      ],
+      ),
+      trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFFB8B0B0), size: 20),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
     );
   }
 }

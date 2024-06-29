@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:easy_search_bar/easy_search_bar.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:food_for_thought/back-end/database.dart';
 import 'package:food_for_thought/classes/created_recipe_class.dart';
 import 'package:food_for_thought/user-interface/cards/created_recipe_card.dart';
@@ -18,7 +18,7 @@ class CreatedRecipesPage extends StatefulWidget {
 class CreatedRecipesPageState extends State<CreatedRecipesPage>
     with CreatedRecipeMixin {
   late List<CreatedRecipe> recipes = [];
-  String uid = FirebaseAuth.instance.currentUser!.uid;
+  String uid = Supabase.instance.client.auth.currentUser!.id;
   String searchValue = '';
   String createdRecipes = 'created recipes';
   bool loaded = true;
@@ -61,7 +61,6 @@ class CreatedRecipesPageState extends State<CreatedRecipesPage>
     Timer(Duration(seconds: 2), () => getRecipes());
   }
 
-  //Load the created recipes from firebase
   Future<void> getRecipes() async {
     recipes = await DatabaseService.getCreatedRecipes(uid);
     setState(() {
@@ -242,13 +241,12 @@ class CreatedRecipesPageState extends State<CreatedRecipesPage>
                                       //if the recipe is private only, delete the image from storage
                                       //else (the recipe is public and verified), keep the image in storage because it is still being used by the public verified recipe
                                       if (!(await publicVerifiedRecipeExists(
-                                          recipes[index].name, user!.uid))) {
+                                          recipes[index].name, uid))) {
                                         //if public recipe does not exist, this deletes the image from storage
-                                        deleteImageFromFirebaseByUrl(
+                                        deleteImageByUrl(
                                             recipes[index].image);
                                       }
-                                      //delete the recipe from private collection
-                                      deletePrivateRecipeFromFirebase(
+                                      deletePrivateRecipe(
                                           recipeName: recipes[index].name);
                                       //refresh the array after deleting the recipe
                                       getRecipes();

@@ -1,17 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_thought/back-end/database.dart';
 import 'package:food_for_thought/classes/user_class.dart';
 import 'package:loading_indicator/loading_indicator.dart';
-import '../../back-end/authentification.dart';
-import '../../classes/created_recipe_class.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../classes/public_created_recipe_class.dart';
-import '../cards/created_recipe_card.dart';
 import '../cards/public_created_recipe_card.dart';
 
 class CommunityFeedPage extends StatefulWidget {
@@ -21,41 +14,22 @@ class CommunityFeedPage extends StatefulWidget {
 
 // Creates the community feed page
 class CommunityFeedPageState extends State<CommunityFeedPage> {
-  String uid = FirebaseAuth.instance.currentUser!.uid;
+  String uid = Supabase.instance.client.auth.currentUser!.id;
   late UserInformation user;
-// empty array to feed in recipes
   late List<PublicCreatedRecipe> recipes = [];
   late List<String> names = [];
-  final FirebaseStorage storage = FirebaseStorage.instance;
   bool _isLoading = true;
-  FirebaseFirestore db = FirebaseFirestore.instance;
 
 //Getting recipes from the database
   Future<void> getRecipes() async {
-    FirebaseFirestore.instance
-        .collection('verified-created-recipes')
-        .get()
-        .then((querySnapshot) async {
-      for (var doc in querySnapshot.docs) {
-        var data = doc.data();
-        PublicCreatedRecipe recipe = PublicCreatedRecipe(
-          name: data['title'],
-          servings: data['servings'],
-          ingredients: data['ingredients'],
-          cookInstructions: data['cookInstructions'],
-          totalTime: data['cookTime'],
-          image: data['thumbnailUrl'],
-          userId: data['userId'],
-        );
-        recipes.add(recipe);
-      }
-      for (int i = 0; i < recipes.length; i++) {
-        String name = await DatabaseService.getUsersName(recipes[i].userId);
-        names.add(name);
-      }
-      setState(() {
-        _isLoading = false;
-      });
+    recipes = await DatabaseService.getVerifiedCreatedRecipes();
+    names.clear();
+    for (int i = 0; i < recipes.length; i++) {
+      String name = await DatabaseService.getUsersName(recipes[i].userId);
+      names.add(name);
+    }
+    setState(() {
+      _isLoading = false;
     });
   }
 
@@ -129,24 +103,13 @@ class CommunityFeedPageState extends State<CommunityFeedPage> {
                           style: TextStyle(
                               color: Colors.white, fontWeight: FontWeight.bold),
                         ),
-                        onPressed: () {
+                        onPressed: () async {
                           print(recipes[index].name);
                           Navigator.pop(context);
-                          Map<String, dynamic> savedRecipe = {
-                            'title': recipes[index].name,
-                            'servings': recipes[index].servings,
-                            'ingredients': recipes[index].ingredients,
-                            'cookInstructions': recipes[index].cookInstructions,
-                            'thumbnailUrl': recipes[index].image,
-                            'cookTime': recipes[index].totalTime,
-                            'userId': recipes[index].userId,
-                          };
-                          FirebaseFirestore.instance
-                              .collection("users")
-                              .doc(uid)
-                              .collection('liked recipe (user)')
-                              .doc(recipes[index].name)
-                              .set(savedRecipe);
+                          if (recipes[index].id != null) {
+                            await DatabaseService.likePublicRecipe(
+                                uid, recipes[index].id!);
+                          }
                           _isLoading = true;
                           recipes.clear();
                           getRecipes();

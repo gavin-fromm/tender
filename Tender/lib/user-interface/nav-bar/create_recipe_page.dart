@@ -3,7 +3,7 @@ import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:food_for_thought/classes/created_recipe_class.dart'; //mixin with functions for firebase
+import 'package:food_for_thought/classes/created_recipe_class.dart';
 import 'dart:io';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 
@@ -366,11 +366,7 @@ class RecipeCreationState extends State<RecipeCreation>
                               // didChangeDependencies();
                               areAllFieldsFilled();
                             } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content:
-                                        Text('Please enter an ingredient.')),
-                              );
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please enter an ingredient.')));
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -568,7 +564,7 @@ class RecipeCreationState extends State<RecipeCreation>
                               () => createRecipeButton.reset());
 
                           //send the image to cloud storage
-                          String downloadUrl = await uploadImageToFirebase(
+                          String downloadUrl = await uploadImage(
                               image: xfileImage, recipeName: recipeTitle.text);
                           //temporary variables hold recipe data
                           Map<String, dynamic> data = {
@@ -580,11 +576,11 @@ class RecipeCreationState extends State<RecipeCreation>
                             'cookTime': cookTime.text
                           };
                           //add to user's personal created recipes collection
-                          await uploadRecipeToFirebase(
+                          await uploadRecipe(
                               recipeData: data, name: recipeTitle.text);
                           if (isPublicRecipe) {
                             //if public, add to public created recipes collection
-                            await uploadPublicRecipeToFirebase(
+                            await uploadPublicRecipe(
                                 recipeData: data, name: recipeTitle.text);
                           }
                           //ignore: use_build_context_synchronously

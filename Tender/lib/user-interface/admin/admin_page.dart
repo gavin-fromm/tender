@@ -1,6 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:food_for_thought/back-end/authentification.dart';
 import 'package:food_for_thought/back-end/database.dart';
 import 'package:food_for_thought/classes/public_created_recipe_class.dart';
@@ -18,9 +17,7 @@ class AdminPage extends StatefulWidget {
 }
 
 class AdminPageState extends State<AdminPage> {
-  FirebaseFirestore db = FirebaseFirestore.instance;
-  final user = FirebaseAuth.instance.currentUser!;
-  String uid = FirebaseAuth.instance.currentUser!.uid.toString();
+  String uid = Supabase.instance.client.auth.currentUser!.id;
   List<PublicCreatedRecipe> createdRecipesVerification = [];
   List<PublicCreatedRecipe> verifiedRecipes = [];
   int recipeCount = 0; //varibale for recipe statstics

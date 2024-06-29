@@ -1,8 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:carousel_slider/carousel_slider.dart';
 
 // Help page implemented by : Jaideep Chunduri
-class HelpPage extends StatelessWidget {
+class HelpPage extends StatefulWidget {
+  @override
+  _HelpPageState createState() => _HelpPageState();
+}
+
+class _HelpPageState extends State<HelpPage> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,30 +52,43 @@ class HelpPage extends StatelessWidget {
           SizedBox(
             height: 20,
           ),
-          CarouselSlider(
-            options: CarouselOptions(height: 400.0),
-            items: [
-              feedPage(context),
-              likedRecipes(context),
-              pinnedRecipes(context),
-              createdRecipes(context),
-              userInformation(context),
-              recommendedRecipes(context)
-            ].map((i) {
-              return Builder(
-                builder: (BuildContext context) {
-                  return Container(
-                    width: MediaQuery.of(context).size.width,
-                    margin: EdgeInsets.symmetric(horizontal: 5.0),
-                    decoration: BoxDecoration(
-                      color: Color.fromARGB(255, 83, 83, 83),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: i,
-                  );
-                },
+          Container(
+            height: 400.0,
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentPage = index;
+                });
+              },
+              children: [
+                feedPage(context),
+                likedRecipes(context),
+                pinnedRecipes(context),
+                createdRecipes(context),
+                userInformation(context),
+                recommendedRecipes(context)
+              ],
+            ),
+          ),
+          SizedBox(
+            height: 20,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(6, (index) {
+              return Container(
+                margin: EdgeInsets.symmetric(horizontal: 4),
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _currentPage == index
+                      ? Color.fromARGB(255, 244, 4, 4)
+                      : Colors.grey,
+                ),
               );
-            }).toList(),
+            }),
           ),
           SizedBox(
             height: 20,

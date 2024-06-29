@@ -1,6 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class PublicCreatedRecipe {
+  final String? id;
   final String name;
   final String servings;
   final List<dynamic> ingredients;
@@ -9,25 +8,27 @@ class PublicCreatedRecipe {
   final String totalTime;
   final String userId;
 
-  PublicCreatedRecipe(
-      {required this.name,
-      required this.servings,
-      required this.ingredients,
-      required this.cookInstructions,
-      required this.image,
-      required this.totalTime,
-      required this.userId});
+  PublicCreatedRecipe({
+    this.id,
+    required this.name,
+    required this.servings,
+    required this.ingredients,
+    required this.cookInstructions,
+    required this.image,
+    required this.totalTime,
+    required this.userId,
+  });
 
-  factory PublicCreatedRecipe.fromFirestore(
-      DocumentSnapshot<Map<String, dynamic>> snapshot) {
-    final data = snapshot.data();
+  factory PublicCreatedRecipe.fromMap(Map<String, dynamic> data) {
     return PublicCreatedRecipe(
-        name: data?['title'],
-        servings: data?['servings'],
-        ingredients: data?['ingredients'],
-        cookInstructions: data?['cookInstructions'],
-        image: data?['thumbnailUrl'],
-        totalTime: data?['cookTime'],
-        userId: data?['userId']);
+      id: data['id'] as String?,
+      name: data['title'] as String? ?? '',
+      servings: data['servings'] as String? ?? '',
+      ingredients: data['ingredients'] as List<dynamic>? ?? [],
+      cookInstructions: data['cook_instructions'] as String? ?? '',
+      image: data['thumbnail_url'] as String? ?? '',
+      totalTime: data['cook_time'] as String? ?? '',
+      userId: data['user_id'] as String? ?? '',
+    );
   }
 }
