@@ -1,16 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:food_for_thought/user-interface/user-functions/forgot_password_page.dart';
 import 'package:food_for_thought/user-interface/side-menu/help_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'user-interface/home_page.dart';
 import 'user-interface/user-functions/login_page.dart';
 import 'user-interface/user-functions/registration_page.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'back-end/firebase_options.dart';
+import 'back-end/supabase_config.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
   runApp(MyApp());
+}
+
+class TodoPage extends StatefulWidget {
+  const TodoPage({super.key});
+
+  @override
+  State<TodoPage> createState() => _TodoPageState();
+}
+
+class _TodoPageState extends State<TodoPage> {
+  final _future = Supabase.instance.client.from('todos').select();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: FutureBuilder(
+        future: _future,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final todos = snapshot.data!;
+          return ListView.builder(
+            itemCount: todos.length,
+            itemBuilder: (context, index) {
+              final todo = todos[index];
+              return ListTile(
+                title: Text(todo['name']),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -25,8 +60,9 @@ class MyApp extends StatelessWidget {
         'registration_page': (context) => RegistrationPage(),
         'login_page': (context) => LoginPage(),
         'home_page': (context) => HomePage(),
-        'forgot_pasword_page': (context) => ForgotPasswordPage(),
+        'forgot_password_page': (context) => ForgotPasswordPage(),
         'help_page': (context) => HelpPage(),
+        'todo_page': (context) => TodoPage(),
       },
     );
   }

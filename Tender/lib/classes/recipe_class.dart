@@ -1,7 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-//class to facilitate operations involving recipes -- Implemeted by : Gavin Fromm
-
 class Recipe {
   final int id;
   final String name;
@@ -32,8 +28,6 @@ class Recipe {
     required this.isVeryHealthy,
     required this.isPopular,
   });
-
-  //method to create recipe object from json object
 
   factory Recipe.fromJson(dynamic json) {
     if (json['id'] != null &&
@@ -67,28 +61,23 @@ class Recipe {
     }
   }
 
-  //method to create recipe object from firestore mapping
-
-  factory Recipe.fromFirestore(
-      DocumentSnapshot<Map<String, dynamic>> snapshot) {
-    final data = snapshot.data();
+  factory Recipe.fromMap(Map<String, dynamic> data) {
     return Recipe(
-        id: data?['id'],
-        name: data?['title'],
-        servings: data?['servings'],
-        ingredients: data?['ingredients'],
-        preparationSteps: data?['preparationSteps'],
-        images: data?['thumbnailUrl'],
-        totalTime: data?['cookTime'],
-        isVegetarian: data?['isVegetarian'],
-        isVegan: data?['isVegan'],
-        isGlutenFree: data?['isGlutenFree'],
-        isDairyFree: data?['isDairyFree'],
-        isVeryHealthy: data?['isVeryHealthy'],
-        isPopular: data?['isPopular']);
+      id: (data['id'] as num).toInt(),
+      name: data['title'] as String? ?? '',
+      servings: (data['servings'] as num?)?.toInt() ?? 0,
+      ingredients: data['ingredients'] as List<dynamic>? ?? [],
+      preparationSteps: data['preparation_steps'] as String? ?? '',
+      images: data['thumbnail_url'] as String? ?? '',
+      totalTime: (data['cook_time'] as num?)?.toInt() ?? 0,
+      isVegetarian: data['is_vegetarian'] as bool? ?? false,
+      isVegan: data['is_vegan'] as bool? ?? false,
+      isGlutenFree: data['is_gluten_free'] as bool? ?? false,
+      isDairyFree: data['is_dairy_free'] as bool? ?? false,
+      isVeryHealthy: data['is_very_healthy'] as bool? ?? false,
+      isPopular: data['is_popular'] as bool? ?? false,
+    );
   }
-
-  //method to turn recipes created from JSON, into a List of Recipe objects
 
   static List<Recipe> recipesFromSnapshot(List snapshot) {
     return snapshot.map((data) {

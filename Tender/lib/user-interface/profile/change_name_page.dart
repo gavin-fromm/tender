@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:food_for_thought/user-interface/user-functions/login_page.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 import '../../back-end/authentification.dart';
@@ -19,8 +19,8 @@ class ChangeNamePageState extends State<ChangeNamePage> {
   TextEditingController confirmPasswordController = TextEditingController();
   final RoundedLoadingButtonController updateInfoButton =
       RoundedLoadingButtonController();
-  final user = FirebaseAuth.instance.currentUser!;
-  final userEmail = FirebaseAuth.instance.currentUser?.email;
+  final _supabaseUser = Supabase.instance.client.auth.currentUser!;
+  String get _userEmail => Supabase.instance.client.auth.currentUser?.email ?? '';
 
   static const creationSuccessful = SnackBar(
     content: Text('Name Updated! Redirecting.....'),
@@ -48,7 +48,7 @@ class ChangeNamePageState extends State<ChangeNamePage> {
       onPressed: () async {
         updateInfoButton.success();
         updateName(firstNameController.text.trim(),
-            lastNameController.text.trim(), user.uid);
+            lastNameController.text.trim(), _supabaseUser.id);
         // ignore: use_build_context_synchronously
         Navigator.push(context, MaterialPageRoute(builder: (_) => LoginPage()));
         signOut();
@@ -190,10 +190,10 @@ class ChangeNamePageState extends State<ChangeNamePage> {
                         () => ScaffoldMessenger.of(context)
                             .hideCurrentMaterialBanner());
                   } else {
-                    User? user = await signInWithEmailPassword(
-                        userEmail.toString(),
+                    User? signedInUser = await signInWithEmailPassword(
+                        _userEmail,
                         confirmPasswordController.text.toString());
-                    if (user != null) {
+                    if (signedInUser != null) {
                       showAlertDialog(context);
                     } else {
                       updateInfoButton.error();

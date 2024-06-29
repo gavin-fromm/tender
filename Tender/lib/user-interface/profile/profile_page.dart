@@ -1,17 +1,13 @@
 import 'dart:async';
 
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:food_for_thought/back-end/authentification.dart';
 import 'package:food_for_thought/user-interface/profile/change_email_page.dart';
 import 'package:food_for_thought/back-end/database.dart';
 import 'package:food_for_thought/classes/user_class.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:loading_indicator/loading_indicator.dart';
-import 'dart:io';
 import '../user-functions/login_page.dart';
 import 'change_name_page.dart';
 import 'change_password_page.dart';
@@ -55,10 +51,9 @@ class ProfilePageState extends State<ProfilePage> {
     actions: const [SizedBox.shrink()],
   );
 
-  FirebaseFirestore db = FirebaseFirestore.instance;
-  final user = FirebaseAuth.instance.currentUser!;
-  String uid = FirebaseAuth.instance.currentUser!.uid.toString();
-  final userEmail = FirebaseAuth.instance.currentUser?.email;
+  final user = Supabase.instance.client.auth.currentUser!;
+  String uid = Supabase.instance.client.auth.currentUser!.id;
+  final userEmail = Supabase.instance.client.auth.currentUser?.email;
   String profilePicLink = " ";
   late String userId = uid.toString();
   UserInformation? userInformation;
@@ -440,14 +435,14 @@ class ProfilePageState extends State<ProfilePage> {
                                                         .value
                                                         .text
                                                         .isNotEmpty) {
-                                                      User? user =
+                                                      User? signedInUser =
                                                           await signInWithEmailPassword(
                                                               userEmail
                                                                   .toString(),
                                                               passwordFieldController
                                                                   .value.text);
-                                                      if (user != null) {
-                                                        deleteUser(user, uid);
+                                                      if (signedInUser != null) {
+                                                        deleteUser(uid);
                                                         // ignore: use_build_context_synchronously
                                                         Navigator.push(
                                                             context,

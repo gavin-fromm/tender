@@ -1,12 +1,10 @@
 import 'dart:async';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_thought/user-interface/user-functions/login_page.dart';
 import 'package:rounded_loading_button/rounded_loading_button.dart';
 import '../../back-end/authentification.dart';
-
-//UI screen for updating user emails
 
 class ChangeEmailPage extends StatefulWidget {
   @override
@@ -19,7 +17,6 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
   TextEditingController confirmPasswordController = TextEditingController();
   final RoundedLoadingButtonController updateInfoButton =
       RoundedLoadingButtonController();
-  final user = FirebaseAuth.instance.currentUser!;
 
   static const creationSuccessful = SnackBar(
     content: Text('Email Updated! Redirecting.....'),
@@ -46,19 +43,21 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
       ),
       onPressed: () async {
         updateInfoButton.success();
-        await user.updateEmail(newEmailController.text.trim());
-        updateUserEmail(newEmailController.text.trim(), user.uid);
-        // ignore: use_build_context_synchronously
+        final supabase = Supabase.instance.client;
+        await supabase.auth
+            .updateUser(UserAttributes(email: newEmailController.text.trim()));
+        updateUserEmail(newEmailController.text.trim(),
+            supabase.auth.currentUser!.id);
         Navigator.push(context, MaterialPageRoute(builder: (_) => LoginPage()));
         signOut();
         ScaffoldMessenger.of(context).showSnackBar(creationSuccessful);
       },
-    ); // set up the AlertDialog
+    );
     AlertDialog alert = AlertDialog(
       title: Text("Confirm"),
       content: Text("You will be logged out after performing this action."),
       actions: [cancelButton, confirmButton],
-    ); // show the dialog
+    );
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -75,9 +74,7 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
       color: Colors.red,
       title: 'Incorrect Email',
       message: 'Email entered does not match current user',
-
       contentType: ContentType.failure,
-      // to configure for material banner
     ),
     actions: const [SizedBox.shrink()],
   );
@@ -89,13 +86,10 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
       color: Colors.red,
       title: 'Incorrect Password',
       message: 'password entered does not match current user',
-
       contentType: ContentType.failure,
-      // to configure for material banner
     ),
     actions: const [SizedBox.shrink()],
   );
-
   final emptyInputMessage = MaterialBanner(
     backgroundColor: Colors.transparent,
     elevation: 0,
@@ -104,13 +98,10 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
       color: Colors.red,
       title: 'Empty Input',
       message: 'Please fill in all inputs',
-
       contentType: ContentType.failure,
-      // to configure for material banner
     ),
     actions: const [SizedBox.shrink()],
   );
-
   final emailFormatMessage = MaterialBanner(
     backgroundColor: Colors.transparent,
     elevation: 0,
@@ -119,15 +110,15 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
       color: Colors.red,
       title: 'Email Format Incorrect',
       message: 'Please enter a valid email',
-
       contentType: ContentType.failure,
-      // to configure for material banner
     ),
     actions: const [SizedBox.shrink()],
   );
 
   @override
   Widget build(BuildContext context) {
+    final currentEmail =
+        Supabase.instance.client.auth.currentUser?.email ?? '';
     return Scaffold(
       appBar: AppBar(
         shape: RoundedRectangleBorder(
@@ -145,22 +136,15 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
       body: SingleChildScrollView(
         child: Center(
           child: Column(children: [
-            SizedBox(
-              height: 100,
-            ),
+            SizedBox(height: 100),
             SizedBox(
                 width: 200,
                 height: 90,
-                child: Icon(
-                  Icons.person,
-                  size: 70,
-                ) //to display the image
-                ),
+                child: Icon(Icons.person, size: 70)),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextField(
                 controller: oldEmailController,
-                //Text Field for username/email
                 decoration: InputDecoration(
                     border: OutlineInputBorder(),
                     icon: Icon(Icons.mail),
@@ -172,7 +156,6 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
               padding: const EdgeInsets.all(8.0),
               child: TextField(
                 controller: newEmailController,
-                //Text Field for username/email
                 decoration: InputDecoration(
                     border: OutlineInputBorder(),
                     icon: Icon(Icons.mail),
@@ -185,7 +168,6 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
               child: TextField(
                 obscureText: true,
                 controller: confirmPasswordController,
-                //Text Field for username/email
                 decoration: InputDecoration(
                     border: OutlineInputBorder(),
                     icon: Icon(Icons.lock),
@@ -209,7 +191,6 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
                       confirmPasswordController.text.isEmpty) {
                     updateInfoButton.error();
                     Timer(Duration(seconds: 1), () => updateInfoButton.reset());
-                    // ignore: use_build_context_synchronously
                     ScaffoldMessenger.of(context)
                       ..hideCurrentMaterialBanner()
                       ..showMaterialBanner(emptyInputMessage);
@@ -217,10 +198,9 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
                         Duration(seconds: 2),
                         () => ScaffoldMessenger.of(context)
                             .hideCurrentMaterialBanner());
-                  } else if (oldEmailController.text != user.email!) {
+                  } else if (oldEmailController.text != currentEmail) {
                     updateInfoButton.error();
                     Timer(Duration(seconds: 2), () => updateInfoButton.reset());
-                    // ignore: use_build_context_synchronously
                     ScaffoldMessenger.of(context)
                       ..hideCurrentMaterialBanner()
                       ..showMaterialBanner(incorrectEmailMessage);
@@ -231,7 +211,6 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
                   } else if (!newEmailController.text.contains('@')) {
                     updateInfoButton.error();
                     Timer(Duration(seconds: 2), () => updateInfoButton.reset());
-                    // ignore: use_build_context_synchronously
                     ScaffoldMessenger.of(context)
                       ..hideCurrentMaterialBanner()
                       ..showMaterialBanner(emailFormatMessage);
@@ -249,7 +228,6 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
                       updateInfoButton.error();
                       Timer(
                           Duration(seconds: 2), () => updateInfoButton.reset());
-                      // ignore: use_build_context_synchronously
                       ScaffoldMessenger.of(context)
                         ..hideCurrentMaterialBanner()
                         ..showMaterialBanner(incorrectPasswordMessage);

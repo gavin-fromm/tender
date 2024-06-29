@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flip_card/flip_card.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:food_for_thought/classes/nutrition_class.dart';
 import 'package:fraction/fraction.dart';
 import '../../back-end/api_config.dart';
@@ -318,7 +318,7 @@ class _RecipeCardState extends State<RecipeCard> {
               Center(
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 5.0, vertical: 10),
-                  child: Container(
+                  child: SizedBox(
                     width: 300,
                     child: Text(
                       widget.title,
@@ -376,7 +376,7 @@ class _RecipeCardState extends State<RecipeCard> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
+                      SizedBox(
                         height: 50,
                         width: 140,
                         child: TextField(
@@ -509,10 +509,10 @@ class _RecipeCardState extends State<RecipeCard> {
                     height: 20,
                   ),
                   for (int i = 1; i <= widget.ingredients.length - 1; i++) ...[
-                    Container(
+                    SizedBox(
                       width: 200,
                       child: Text(
-                          ("$i.)  ${recipeYieldModifier * widget.ingredients[i]['amount'] >= 1 ? recipeYieldModifier * widget.ingredients[i]['amount'] : MixedFraction.fromDouble(recipeYieldModifier * widget.ingredients[i]['amount'] as double)} ${widget.ingredients[i]['unit']} ${widget.ingredients[i]['originalName']}\n"),
+                          ("$i.)  ${recipeYieldModifier * widget.ingredients[i]['amount'] >= 1 ? recipeYieldModifier * widget.ingredients[i]['amount'] : MixedFraction.fromDouble(recipeYieldModifier * widget.ingredients[i]['amount'])} ${widget.ingredients[i]['unit']} ${widget.ingredients[i]['originalName']}\n"),
                           style: TextStyle()),
                     )
                   ],
@@ -526,11 +526,9 @@ class _RecipeCardState extends State<RecipeCard> {
                   SizedBox(
                     height: 10,
                   ),
-                  Container(
+                  SizedBox(
                     width: 350,
-                    child: Html(
-                      data: widget.preparationSteps,
-                    ),
+                    child: HtmlWidget(widget.preparationSteps),
                   ),
                   SizedBox(
                     height: 15,
@@ -766,7 +764,7 @@ class _RecipeCardState extends State<RecipeCard> {
       builder: (context) {
         return AlertDialog(
           title: Center(child: Text('Nutrition Facts')),
-          content: Container(
+          content: SizedBox(
             height: 120,
             child: Column(
               children: [

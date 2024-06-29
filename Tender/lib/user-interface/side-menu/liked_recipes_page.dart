@@ -1,8 +1,7 @@
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_search_bar/easy_search_bar.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:food_for_thought/classes/public_created_recipe_class.dart';
 import 'package:food_for_thought/classes/recipe_class.dart';
 import 'package:food_for_thought/user-interface/cards/public_created_recipe_card.dart';
@@ -21,8 +20,7 @@ class ViewSavedRecipesPageState extends State<ViewSavedRecipesPage> {
   late List<Recipe> recipes = [];
   late List<PublicCreatedRecipe> publicRecipes = [];
   late List<String> names = [];
-  String uid = FirebaseAuth.instance.currentUser!.uid;
-  FirebaseFirestore db = FirebaseFirestore.instance;
+  String uid = Supabase.instance.client.auth.currentUser!.id;
 
   String searchValue = '';
   String savedRecipes = 'saved recipes';
@@ -357,14 +355,10 @@ class ViewSavedRecipesPageState extends State<ViewSavedRecipesPage> {
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold),
                           ),
-                          onPressed: () {
+                          onPressed: () async {
                             Navigator.pop(context);
-                            final docs = FirebaseFirestore.instance
-                                .collection("users")
-                                .doc(uid)
-                                .collection('saved recipes')
-                                .doc(recipes[index].name)
-                                .delete();
+                            await DatabaseService.unsaveRecipe(
+                                uid, recipes[index].id);
                             getRecipes();
                             setState(() {});
                           },
@@ -406,31 +400,10 @@ class ViewSavedRecipesPageState extends State<ViewSavedRecipesPage> {
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold),
                           ),
-                          onPressed: () {
+                          onPressed: () async {
                             Navigator.pop(context);
-                            Map<String, dynamic> savedRecipe = {
-                              'id': recipes[index].id,
-                              'title': recipes[index].name,
-                              'servings': recipes[index].servings,
-                              'ingredients': recipes[index].ingredients,
-                              'preparationSteps':
-                                  recipes[index].preparationSteps,
-                              'cookTime': recipes[index].totalTime,
-                              'thumbnailUrl': recipes[index].images,
-                              'isVegetarian': recipes[index].isVegetarian,
-                              'isVegan': recipes[index].isVegan,
-                              'isGlutenFree': recipes[index].isGlutenFree,
-                              'isDairyFree': recipes[index].isDairyFree,
-                              'isVeryHealthy': recipes[index].isVeryHealthy,
-                              'isPopular': recipes[index].isPopular
-                            };
-                            final docs = FirebaseFirestore.instance
-                                .collection("users")
-                                .doc(uid)
-                                .collection('pinned recipes')
-                                .doc(recipes[index].name)
-                                .set(savedRecipe);
-
+                            await DatabaseService.pinRecipe(
+                                uid, recipes[index]);
                             getRecipes();
                             setState(() {});
                           },

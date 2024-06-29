@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_thought/user-interface/nav-bar/create_recipe_from_url_page.dart';
 import 'package:food_for_thought/user-interface/nav-bar/feed_page.dart';
@@ -13,7 +12,6 @@ class HomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<HomePage> {
-  final user = FirebaseAuth.instance.currentUser;
   int selectedIndex = 2;
   static const TextStyle optionStyle =
       TextStyle(fontSize: 30, fontWeight: FontWeight.bold);

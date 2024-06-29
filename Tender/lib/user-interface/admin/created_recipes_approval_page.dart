@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_thought/classes/public_created_recipe_class.dart';
 import 'package:loading_indicator/loading_indicator.dart';
@@ -15,9 +13,6 @@ class ApproveCreatedRecipesPage extends StatefulWidget {
 }
 
 class ApproveCreatedRecipesPageState extends State<ApproveCreatedRecipesPage> {
-  FirebaseFirestore db = FirebaseFirestore.instance;
-  final user = FirebaseAuth.instance.currentUser!;
-  String uid = FirebaseAuth.instance.currentUser!.uid.toString();
   List<PublicCreatedRecipe> createdRecipes = [];
   bool loading = true;
 
@@ -180,14 +175,11 @@ class ApproveCreatedRecipesPageState extends State<ApproveCreatedRecipesPage> {
                 style:
                     TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context);
-
-                FirebaseFirestore.instance
-                    .collection("created recipes")
-                    .doc(createdRecipes[index].name)
-                    .delete();
-
+                if (createdRecipes[index].id != null) {
+                  await DatabaseService.denyRecipe(createdRecipes[index].id!);
+                }
                 getRecipes();
                 setState(() {});
               },
@@ -227,28 +219,9 @@ class ApproveCreatedRecipesPageState extends State<ApproveCreatedRecipesPage> {
                 style:
                     TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context);
-
-                Map<String, dynamic> verifiedRecipe = {
-                  'cookInstructions': createdRecipes[index].cookInstructions,
-                  'cookTime': createdRecipes[index].totalTime,
-                  'servings': createdRecipes[index].servings,
-                  'ingredients': createdRecipes[index].ingredients,
-                  'title': createdRecipes[index].name,
-                  'thumbnailUrl': createdRecipes[index].image,
-                  'userId': createdRecipes[index].userId,
-                };
-                FirebaseFirestore.instance
-                    .collection("verified-created-recipes")
-                    .doc(createdRecipes[index].name)
-                    .set(verifiedRecipe);
-
-                FirebaseFirestore.instance
-                    .collection("created recipes")
-                    .doc(createdRecipes[index].name)
-                    .delete();
-
+                await DatabaseService.approveRecipe(createdRecipes[index]);
                 getRecipes();
                 setState(() {});
               },

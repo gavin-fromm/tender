@@ -1,5 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:food_for_thought/back-end/database.dart';
 import 'package:food_for_thought/classes/user_class.dart';
 import 'package:food_for_thought/user-interface/side-menu/help_page.dart';
@@ -25,8 +25,7 @@ class NavDrawer extends StatefulWidget {
 }
 
 class _NavDrawerState extends State<NavDrawer> {
-  final user = FirebaseAuth.instance.currentUser!;
-  String uid = FirebaseAuth.instance.currentUser!.uid.toString();
+  String uid = Supabase.instance.client.auth.currentUser!.id;
   bool loading = true;
 
   UserInformation? userInformation;
@@ -94,7 +93,7 @@ class _NavDrawerState extends State<NavDrawer> {
     return ListView(
       padding: EdgeInsets.zero,
       children: <Widget>[
-        Container(
+        SizedBox(
           height: 110,
           child: DrawerHeader(
             decoration:

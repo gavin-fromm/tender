@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flip_card/flip_card.dart';
-import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 
 //class to define how the recipes are presented to the user -- Implemented by : Gavin Fromm
 
@@ -162,7 +162,7 @@ class PublicCreatedRecipeCard extends StatelessWidget {
               children: [
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 5.0, vertical: 10),
-                  child: Container(
+                  child: SizedBox(
                     width: 300,
                     child: Text(
                       title,
@@ -216,7 +216,7 @@ class PublicCreatedRecipeCard extends StatelessWidget {
                       height: 20,
                     ),
                     for (int i = 0; i <= ingredients.length - 1; i++) ...[
-                      Container(
+                      SizedBox(
                         width: 200,
                         child: Text(("${i + 1}. ${ingredients[i]}\n"),
                             style: TextStyle()),
@@ -232,11 +232,9 @@ class PublicCreatedRecipeCard extends StatelessWidget {
                     SizedBox(
                       height: 15,
                     ),
-                    Container(
+                    SizedBox(
                       width: 350,
-                      child: Html(
-                        data: cookInstructions,
-                      ),
+                      child: HtmlWidget(cookInstructions),
                     ),
                     SizedBox(
                       height: 15,

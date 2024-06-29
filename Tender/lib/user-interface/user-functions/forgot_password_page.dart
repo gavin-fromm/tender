@@ -1,58 +1,45 @@
 import 'dart:async';
-import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
-import 'package:rounded_loading_button/rounded_loading_button.dart';
 import 'login_page.dart';
 
-class ForgotPasswordPage extends StatelessWidget {
+class ForgotPasswordPage extends StatefulWidget {
   static String id = 'forgot-password';
-  final _emailController = TextEditingController();
 
+  @override
+  _ForgotPasswordPageState createState() => _ForgotPasswordPageState();
+}
+
+class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+  final _emailController = TextEditingController();
+  bool isLoading = false;
+
+  @override
   void dispose() {
     _emailController.dispose();
+    super.dispose();
+  }
+
+  void showSnackBar(String message, bool isError) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<bool> passwordReset() async {
     try {
-      await FirebaseAuth.instance
-          .sendPasswordResetEmail(email: _emailController.text.trim());
+      await Supabase.instance.client.auth
+          .resetPasswordForEmail(_emailController.text.trim());
       return true;
-    } on FirebaseAuthException catch (e) {
+    } on AuthException {
       return false;
     }
   }
 
-  final RoundedLoadingButtonController forgotPasswordButton =
-      RoundedLoadingButtonController();
-  final enterEmailMessage = MaterialBanner(
-    backgroundColor: Colors.transparent,
-    elevation: 0,
-    forceActionsBelow: true,
-    content: AwesomeSnackbarContent(
-      color: Colors.red,
-      title: 'Empty Input',
-      message: 'Please enter an email!',
-
-      contentType: ContentType.failure,
-      // to configure for material banner
-    ),
-    actions: const [SizedBox.shrink()],
-  );
-  final emailDNEMessage = MaterialBanner(
-    backgroundColor: Colors.transparent,
-    elevation: 0,
-    forceActionsBelow: true,
-    content: AwesomeSnackbarContent(
-      color: Colors.red,
-      title: 'Email not found',
-      message: 'Please register first!',
-
-      contentType: ContentType.failure,
-      // to configure for material banner
-    ),
-    actions: const [SizedBox.shrink()],
-  );
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,10 +61,7 @@ class ForgotPasswordPage extends StatelessWidget {
               controller: _emailController,
               decoration: InputDecoration(
                 labelText: 'Email',
-                icon: Icon(
-                  Icons.mail,
-                  color: Colors.grey,
-                ),
+                icon: Icon(Icons.mail, color: Colors.grey),
                 errorStyle: TextStyle(color: Colors.black),
                 labelStyle: TextStyle(color: Colors.black),
                 hintStyle: TextStyle(color: Colors.black),
@@ -96,51 +80,62 @@ class ForgotPasswordPage extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(
                   left: 40.0, right: 40.0, top: 10, bottom: 0),
-              child: RoundedLoadingButton(
+              child: SizedBox(
                 width: 250,
-                borderRadius: 8,
-                animateOnTap: true,
-                resetDuration: Duration(seconds: 3),
-                color: Color.fromARGB(255, 244, 4, 4),
-                controller: forgotPasswordButton,
-                onPressed: () async {
-                  if (await passwordReset()) {
-                    forgotPasswordButton.success();
-                    passwordReset();
-                    Timer(
-                        Duration(seconds: 2),
-                        () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => LoginPage())));
-                  } else if (_emailController.text.isEmpty) {
-                    ScaffoldMessenger.of(context)
-                      ..hideCurrentMaterialBanner()
-                      ..showMaterialBanner(enterEmailMessage);
-                    forgotPasswordButton.error();
-                    Timer(
-                        Duration(seconds: 2),
-                        () => ScaffoldMessenger.of(context)
-                            .hideCurrentMaterialBanner());
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color.fromARGB(255, 244, 4, 4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          setState(() {
+                            isLoading = true;
+                          });
 
-                    Timer(Duration(seconds: 2),
-                        () => forgotPasswordButton.reset());
-                    return;
-                  } else {
-                    ScaffoldMessenger.of(context)
-                      ..hideCurrentMaterialBanner()
-                      ..showMaterialBanner(emailDNEMessage);
-                    forgotPasswordButton.error();
-                    Timer(
-                        Duration(seconds: 2),
-                        () => ScaffoldMessenger.of(context)
-                            .hideCurrentMaterialBanner());
-                    Timer(Duration(seconds: 2),
-                        () => forgotPasswordButton.reset());
-                    return;
-                  }
-                },
-                child: Text(
-                  'Send Email',
-                  style: TextStyle(color: Colors.white, fontSize: 20),
+                          if (_emailController.text.isEmpty) {
+                            showSnackBar('Please enter an email!', true);
+                            setState(() {
+                              isLoading = false;
+                            });
+                            return;
+                          }
+
+                          if (await passwordReset()) {
+                            showSnackBar('Password reset email sent!', false);
+                            Timer(
+                                Duration(seconds: 2),
+                                () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) => LoginPage())));
+                          } else {
+                            showSnackBar(
+                                'Email not found. Please register first!',
+                                true);
+                          }
+
+                          setState(() {
+                            isLoading = false;
+                          });
+                        },
+                  child: isLoading
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          'Send Email',
+                          style: TextStyle(color: Colors.white, fontSize: 20),
+                        ),
                 ),
               ),
             ),

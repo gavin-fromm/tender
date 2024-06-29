@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../back-end/database.dart';
 import 'package:food_for_thought/back-end/api_config.dart';
 import 'package:food_for_thought/user-interface/cards/recipe_card.dart';
 import 'package:loading_indicator/loading_indicator.dart';
@@ -15,7 +15,6 @@ class CreateRecipeFromURLPage extends StatefulWidget {
 
 class CreateRecipeFromURLPageState extends State<CreateRecipeFromURLPage> {
   TextEditingController urlController = TextEditingController();
-  FirebaseFirestore db = FirebaseFirestore.instance;
 
   final emptyInput = MaterialBanner(
     backgroundColor: Colors.transparent,
@@ -256,40 +255,13 @@ class CreateRecipeFromURLPageState extends State<CreateRecipeFromURLPage> {
                                         borderRadius: BorderRadius.circular(12),
                                         color: Color.fromARGB(255, 244, 4, 4)),
                                     child: TextButton(
-                                      onPressed: () {
-                                        Map<String, dynamic> savedRecipe = {
-                                          'id': extractedRecipe[0].id,
-                                          'title': extractedRecipe[0].name,
-                                          'servings':
-                                              extractedRecipe[0].servings,
-                                          'ingredients':
-                                              extractedRecipe[0].ingredients,
-                                          'preparationSteps': extractedRecipe[0]
-                                              .preparationSteps,
-                                          'cookTime':
-                                              extractedRecipe[0].totalTime,
-                                          'thumbnailUrl':
-                                              extractedRecipe[0].images,
-                                          'isVegetarian':
-                                              extractedRecipe[0].isVegetarian,
-                                          'isVegan': extractedRecipe[0].isVegan,
-                                          'isGlutenFree':
-                                              extractedRecipe[0].isGlutenFree,
-                                          'isDairyFree':
-                                              extractedRecipe[0].isDairyFree,
-                                          'isVeryHealthy':
-                                              extractedRecipe[0].isVeryHealthy,
-                                          'isPopular':
-                                              extractedRecipe[0].isPopular,
-                                        };
-
-                                        db
-                                            .collection("users")
-                                            .doc(FirebaseAuth
-                                                .instance.currentUser!.uid)
-                                            .collection("saved recipes")
-                                            .doc(extractedRecipe[0].name)
-                                            .set(savedRecipe);
+                                      onPressed: () async {
+                                        final uid = Supabase.instance.client
+                                            .auth.currentUser?.id;
+                                        if (uid != null) {
+                                          await DatabaseService.saveRecipe(
+                                              uid, extractedRecipe[0]);
+                                        }
 
                                         showDialog(
                                           context: context,
