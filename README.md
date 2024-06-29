@@ -1,5 +1,3 @@
-# Recipeal
-Github Repository for CSC 4996 (Senior Capstone) for development of the Recipeal Project Suite
 
 ## Description
 
