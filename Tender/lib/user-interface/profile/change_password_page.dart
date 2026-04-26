@@ -41,10 +41,15 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
         updateInfoButton.success();
         await Supabase.instance.client.auth
             .updateUser(UserAttributes(password: newPasswordController.text.trim()));
+        await signOut();
         // ignore: use_build_context_synchronously
-        Navigator.push(context, MaterialPageRoute(builder: (_) => LoginPage()));
-        signOut();
-        ScaffoldMessenger.of(context).showSnackBar(creationSuccessful);
+        if (context.mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => LoginPage()),
+            (route) => false,
+          );
+          ScaffoldMessenger.of(context).showSnackBar(creationSuccessful);
+        }
       },
     );
     AlertDialog alert = AlertDialog(
@@ -142,9 +147,8 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               controller: oldPasswordController,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                icon: Icon(Icons.lock),
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.lock_outline_rounded),
                 labelText: 'Current Password',
               ),
             ),
@@ -153,9 +157,8 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               controller: newPasswordController,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                icon: Icon(Icons.password_sharp),
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.lock_open_outlined),
                 labelText: 'New Password',
               ),
             ),
@@ -165,11 +168,9 @@ class ChangePasswordPageState extends State<ChangePasswordPage> {
             child: TextField(
               obscureText: true,
               controller: confirmNewPasswordController,
-              decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  icon: Icon(Icons.password_sharp),
-                  labelText: 'Confirm Password',
-                  hintText: ''),
+              decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.lock_outline_rounded),
+                  labelText: 'Confirm Password'),
             ),
           ),
           Padding(

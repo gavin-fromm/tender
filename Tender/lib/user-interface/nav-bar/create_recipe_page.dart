@@ -366,11 +366,7 @@ class RecipeCreationState extends State<RecipeCreation>
                               // didChangeDependencies();
                               areAllFieldsFilled();
                             } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content:
-                                        Text('Please enter an ingredient.')),
-                              );
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please enter an ingredient.')));
                             }
                           },
                           style: ElevatedButton.styleFrom(

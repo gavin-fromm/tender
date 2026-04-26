@@ -12,15 +12,15 @@ class ChangeEmailPage extends StatefulWidget {
 }
 
 class ChangeEmailPageState extends State<ChangeEmailPage> {
+  static const creationSuccessful = SnackBar(
+    content: Text('Email Updated! Redirecting.....'),
+  );
+
   TextEditingController oldEmailController = TextEditingController();
   TextEditingController newEmailController = TextEditingController();
   TextEditingController confirmPasswordController = TextEditingController();
   final RoundedLoadingButtonController updateInfoButton =
       RoundedLoadingButtonController();
-
-  static const creationSuccessful = SnackBar(
-    content: Text('Email Updated! Redirecting.....'),
-  );
 
   showAlertDialog(BuildContext context) {
     Widget cancelButton = TextButton(
@@ -46,11 +46,17 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
         final supabase = Supabase.instance.client;
         await supabase.auth
             .updateUser(UserAttributes(email: newEmailController.text.trim()));
-        updateUserEmail(newEmailController.text.trim(),
+        await updateUserEmail(newEmailController.text.trim(),
             supabase.auth.currentUser!.id);
-        Navigator.push(context, MaterialPageRoute(builder: (_) => LoginPage()));
-        signOut();
-        ScaffoldMessenger.of(context).showSnackBar(creationSuccessful);
+        await signOut();
+        // ignore: use_build_context_synchronously
+        if (context.mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => LoginPage()),
+            (route) => false,
+          );
+          ScaffoldMessenger.of(context).showSnackBar(creationSuccessful);
+        }
       },
     );
     AlertDialog alert = AlertDialog(
@@ -145,9 +151,8 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
               padding: const EdgeInsets.all(8.0),
               child: TextField(
                 controller: oldEmailController,
-                decoration: InputDecoration(
-                    border: OutlineInputBorder(),
-                    icon: Icon(Icons.mail),
+                decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.mail_outline_rounded),
                     labelText: 'Old Email',
                     hintText: 'example@gmail.com'),
               ),
@@ -156,9 +161,8 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
               padding: const EdgeInsets.all(8.0),
               child: TextField(
                 controller: newEmailController,
-                decoration: InputDecoration(
-                    border: OutlineInputBorder(),
-                    icon: Icon(Icons.mail),
+                decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.mail_outline_rounded),
                     labelText: 'New Email',
                     hintText: 'example@gmail.com'),
               ),
@@ -168,11 +172,9 @@ class ChangeEmailPageState extends State<ChangeEmailPage> {
               child: TextField(
                 obscureText: true,
                 controller: confirmPasswordController,
-                decoration: InputDecoration(
-                    border: OutlineInputBorder(),
-                    icon: Icon(Icons.lock),
-                    labelText: 'Confirm Password',
-                    hintText: ''),
+                decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.lock_outline_rounded),
+                    labelText: 'Confirm Password'),
               ),
             ),
             Padding(

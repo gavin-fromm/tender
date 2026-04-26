@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:food_for_thought/user-interface/user-functions/login_page.dart';
@@ -43,10 +42,15 @@ class ChangeUsernamePageState extends State<ChangeUsernamePage> {
       ),
       onPressed: () async {
         final uid = Supabase.instance.client.auth.currentUser!.id;
-        updateUsername(newUsernameController.text.trim(), uid);
-        Navigator.push(context, MaterialPageRoute(builder: (_) => LoginPage()));
-        signOut();
-        showSnackBar('Username Updated! Redirecting.....', false);
+        await updateUsername(newUsernameController.text.trim(), uid);
+        await signOut();
+        if (context.mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => LoginPage()),
+            (route) => false,
+          );
+          showSnackBar('Username updated!', false);
+        }
       },
     );
     AlertDialog alert = AlertDialog(
@@ -86,9 +90,8 @@ class ChangeUsernamePageState extends State<ChangeUsernamePage> {
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               controller: newUsernameController,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                icon: Icon(Icons.verified_user),
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.alternate_email_rounded),
                 labelText: 'New Username',
               ),
             ),
@@ -98,11 +101,9 @@ class ChangeUsernamePageState extends State<ChangeUsernamePage> {
             child: TextField(
               obscureText: true,
               controller: confirmPasswordController,
-              decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  icon: Icon(Icons.lock),
-                  labelText: 'Confirm Password',
-                  hintText: ''),
+              decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.lock_outline_rounded),
+                  labelText: 'Confirm Password'),
             ),
           ),
           Padding(

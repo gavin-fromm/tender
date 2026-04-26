@@ -169,7 +169,7 @@ class ViewSavedRecipesPageState extends State<ViewSavedRecipesPage> {
           appBar: AppBar(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(80),
+                bottom: Radius.circular(16),
               ),
             ),
             backgroundColor: Colors.grey,
@@ -201,7 +201,7 @@ class ViewSavedRecipesPageState extends State<ViewSavedRecipesPage> {
           appBar: AppBar(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(80),
+                bottom: Radius.circular(16),
               ),
             ),
             backgroundColor: Colors.grey,
@@ -256,28 +256,22 @@ class ViewSavedRecipesPageState extends State<ViewSavedRecipesPage> {
                 borderRadius: BorderRadius.circular(30),
                 color: Color.fromARGB(255, 244, 4, 4),
               ),
-              child: SizedBox(
-                width: 300,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.person,
-                      color: Colors.white,
-                    ),
-                    SizedBox(
-                      width: 5,
-                    ),
-                    Center(
-                      child: Text(
-                        'Created By: @${names[index]}',
-                        style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold),
-                        textAlign: TextAlign.left,
-                      ),
-                    ),
-                  ],
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.person,
+                    color: Colors.white,
+                  ),
+                  SizedBox(
+                    width: 5,
+                  ),
+                  Text(
+                    'Created By: @${names[index]}',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
             ),
             SizedBox(
@@ -423,10 +417,9 @@ class ViewSavedRecipesPageState extends State<ViewSavedRecipesPage> {
   Center loadingIndicator() {
     return Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            height: 220,
-          ),
           SizedBox(
             height: 70,
             width: 70,
@@ -674,9 +667,6 @@ class ViewSavedRecipesPageState extends State<ViewSavedRecipesPage> {
                             ),
                           ),
                         ],
-                      ),
-                      SizedBox(
-                        height: 10,
                       ),
                     ],
                   );
